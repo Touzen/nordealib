@@ -4,7 +4,6 @@ from BeautifulSoup import BeautifulSoup
 LOGIN_URL = 'https://mobil.nordea.se/banking-nordea/nordea-c1/login.html'
 ACC_URL = 'https://mobil.nordea.se/banking-nordea/nordea-c1/accounts.html'
 
-
 SALDO_CLASS = 'bold'
 ACC_SALDO_CLASS = 'twoColumn'
 
@@ -13,7 +12,9 @@ class Connection(object):
         cookie = cookielib.CookieJar()
         self._opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie))
 
-        csrf = self._get_csrf()
+        soup = BeautifulSoup(self._opener.open(LOGIN_URL).read())
+        csrf = soup.find(attrs={'name':'_csrf_token'}).attrMap['value']
+
         login_data = urllib.urlencode({'_csrf_token':csrf,
                                     'xyz':str(pers_id),
                                     'zyx':str(code)})
@@ -22,15 +23,6 @@ class Connection(object):
 
         if not 'Logga ut' in response:
             raise LoginFailed(response)
-
-    def _get_csrf(self):
-        offset = 38
-        length = 43
-        
-        html = self._opener.open(LOGIN_URL).read()
-        csrf_index = html.index('csrf') + offset
-
-        return html[csrf_index : csrf_index + length]
 
     @property
     def saldo(self):
@@ -44,7 +36,6 @@ class Connection(object):
                     + {acc_list[i].contents[0].strip():
                        saldo_list[i+1].contents[0]
                        for i in xrange(len(acc_list))}.items()) #Puke?
-
 
 class LoginFailed(Exception):
     def __init__(self, err):
