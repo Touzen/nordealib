@@ -26,9 +26,8 @@ class Connection(object):
 
     @property
     def balance(self):
-        html = self._opener.open(ACC_URL).read()
-        soup = BeautifulSoup(html, convertEntities="html")
-        
+        soup = self._load(ACC_URL)
+
         acc_list = soup.findAll(attrs=ACC_BALANCE_CLASS)
         balance_list = soup.findAll(attrs=BALANCE_CLASS)[0::2]
 
@@ -36,6 +35,10 @@ class Connection(object):
                     + {acc_list[i].contents[0].strip():
                        balance_list[i+1].contents[0]
                        for i in xrange(len(acc_list))}.items()) #Puke?
+
+    def _load(self, url):
+        html = self._opener.open(url).read()
+        return BeautifulSoup(html, convertEntities="html")
 
 class LoginFailed(Exception):
     def __init__(self, err):
