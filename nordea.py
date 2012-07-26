@@ -12,7 +12,7 @@ class Connection(object):
         self._opener = self._create_opener(pers_id, code)
         self.accounts = self._get_accounts()
 
-    def _create_opener(self, pers_id, code):    
+    def _create_opener(self, pers_id, code):
         cookie = cookielib.CookieJar()
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie))
 
@@ -42,9 +42,10 @@ class Connection(object):
 
         balance_list = soup.findAll(attrs=BALANCE_CLASS)[0::2]
 
-        return dict({'total':balance_list[0].contents[0]}.items()
-                    + {self.accounts[i] : balance_list[i+1].contents[0]
-                       for i in xrange(len(self.accounts))}.items()) #Puke?
+        acc_balance = [(self.accounts[i], balance_list[i+1].contents[0])
+                       for i in xrange(len(self.accounts))]
+
+        return dict([('total', balance_list[0].contents[0])] + acc_balance)
 
     def _load(self, url):
         html = self._opener.open(url).read()
