@@ -9,20 +9,25 @@ ACC_BALANCE_CLASS = 'twoColumn'
 
 class Connection(object):
     def __init__(self, pers_id, code):
-        cookie = cookielib.CookieJar()
-        self._opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie))
+        self._opener = self._create_opener(pers_id, code)
 
-        soup = BeautifulSoup(self._opener.open(LOGIN_URL).read())
+    def _create_opener(pers_id, code):    
+        cookie = cookielib.CookieJar()
+        opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie))
+
+        soup = BeautifulSoup(opener.open(LOGIN_URL).read())
         csrf = soup.find(attrs={'name':'_csrf_token'}).attrMap['value']
 
         login_data = urllib.urlencode({'_csrf_token':csrf,
                                        'xyz':str(pers_id),
                                        'zyx':str(code)})
 
-        response = self._opener.open(LOGIN_URL, login_data).read()
+        response = opener.open(LOGIN_URL, login_data).read()
 
         if not 'Logga ut' in response:
             raise LoginFailed(response)
+
+        return opener
 
     @property
     def balance(self):
