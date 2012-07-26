@@ -10,8 +10,9 @@ ACC_BALANCE_CLASS = 'twoColumn'
 class Connection(object):
     def __init__(self, pers_id, code):
         self._opener = self._create_opener(pers_id, code)
+        self.accounts = self._get_accounts()
 
-    def _create_opener(pers_id, code):    
+    def _create_opener(self, pers_id, code):    
         cookie = cookielib.CookieJar()
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookie))
 
@@ -29,17 +30,21 @@ class Connection(object):
 
         return opener
 
+    def _get_accounts(self):
+        soup = self._load(ACC_URL)
+        acc_matches = soup.findAll(attrs=ACC_BALANCE_CLASS)
+
+        return [acc.contents[0].strip() for acc in acc_matches]
+
     @property
     def balance(self):
         soup = self._load(ACC_URL)
 
-        acc_list = soup.findAll(attrs=ACC_BALANCE_CLASS)
         balance_list = soup.findAll(attrs=BALANCE_CLASS)[0::2]
 
         return dict({'total':balance_list[0].contents[0]}.items()
-                    + {acc_list[i].contents[0].strip():
-                       balance_list[i+1].contents[0]
-                       for i in xrange(len(acc_list))}.items()) #Puke?
+                    + {self.accounts[i] : balance_list[i+1].contents[0]
+                       for i in xrange(len(self.accounts))}.items()) #Puke?
 
     def _load(self, url):
         html = self._opener.open(url).read()
